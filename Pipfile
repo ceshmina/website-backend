@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 functions-framework = "==3.*"
+google-cloud-firestore = "*"
 
 [dev-packages]
 flask = "*"
