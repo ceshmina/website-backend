@@ -4,6 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+pillow = "~=10.3"
 
 [dev-packages]
 
