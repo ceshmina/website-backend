@@ -46,11 +46,12 @@ def pipeline(event):
     key = event['Records'][0]['s3']['object']['key']
     if 'medium' not in key or not key.endswith('.jpg'):
         return
-    key = key[:-4]
 
-    original_path = f'/tmp/{key}.jpg'
-    thumbnail_path = f'/tmp/{key}_thumbnail.jpg'
-    exif_path = f'/tmp/{key}_exif.json'
+    key = key[:-4]
+    filename = key.split('/')[-1]
+    original_path = f'/tmp/{filename}.jpg'
+    thumbnail_path = f'/tmp/{filename}_thumbnail.jpg'
+    exif_path = f'/tmp/{filename}_exif.json'
     s3_client.download_file(bucket, f'{key}.jpg', original_path)
 
     make_thumbnail(original_path, thumbnail_path, 256)
