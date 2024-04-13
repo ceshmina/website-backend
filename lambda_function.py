@@ -1,8 +1,12 @@
 import json
 
+import boto3
 from PIL import Image
 from PIL.ExifTags import TAGS
 from PIL.TiffImagePlugin import IFDRational
+
+
+s3_client = boto3.client('s3')
 
 
 def make_thumbnail(image_path: str, thumbnail_path: str, size: int):
@@ -37,6 +41,30 @@ def extract_exif(image_path: str, exif_path: str):
         json.dump(exif_json, f, indent=2)
 
 
-if __name__ == '__main__':
-    make_thumbnail('sample.jpg', 'sample_thumbnail.jpg', 256)
-    extract_exif('sample.jpg', 'sample_exif.json')
+def pipeline(event):
+    bucket = event['Records'][0]['s3']['bucket']['name']
+    key = event['Records'][0]['s3']['object']['key']
+    if 'medium' not in key or not key.endswith('.jpg'):
+        return
+    key = key[:-4]
+
+    original_path = f'/tmp/{key}.jpg'
+    thumbnail_path = f'/tmp/{key}_thumbnail.jpg'
+    exif_path = f'/tmp/{key}_exif.json'
+    s3_client.download_file(bucket, f'{key}.jpg', original_path)
+
+    make_thumbnail(original_path, thumbnail_path, 256)
+    extract_exif(original_path, exif_path)
+
+    thumbnail_key = key.replace('medium', 'thumbnail')
+    exif_key = key.replace('medium', 'exif')
+    s3_client.upload_file(thumbnail_path, bucket, f'{thumbnail_key}.jpg')
+    s3_client.upload_file(exif_path, bucket, f'{exif_key}.json')
+
+
+def lambda_handler(event, context):
+    try:
+        pipeline(event)
+    except Exception as e:
+        print(e)
+        raise e
